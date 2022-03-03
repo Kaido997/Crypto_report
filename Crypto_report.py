@@ -84,7 +84,7 @@ class Repo:
             if crypto["quote"]["USD"]["volume_24h"] > 76000000:
                 money_top_volume += crypto["quote"]["USD"]["price"]
 
-        self.money_best_volume.update({"money_to_buy_bestvolume": money_top_volume})
+        self.money.update({"money_to_buy_bestvolume": money_top_volume})
 
         # Createing the best10 and worst10 list
         # t, j, k, are temp variable just for the 'for' loops
@@ -105,35 +105,29 @@ class Repo:
 
         # money to purchase a unity of the top 20 cryptos
         # and quantify the earn/loss percentage if buy one unity of the top 20 cryptos yesterday
-        today_price_top20 = 0
-        yesterday_price = 0
-        earn_loss_percent = 0
+        today_price_top20: float = 0
+        yesterday_price: float = 0
+        earn_loss_percent: float = 0
 
         for s in self.top20_crypto:
 
             price = self.top20_crypto[s]["price"]
             percent_change_24h = self.top20_crypto[s]["percent_change_24h"]
             today_price_top20 += price
+            yesterday_price += price / (1 + (percent_change_24h / 100))
 
-            if percent_change_24h < 0:
-                loss = (price * abs(percent_change_24h)) / 100
-                yesterday_price += price + loss
-            else:
-                earn = (price * percent_change_24h) / 100
-                yesterday_price += price - earn
-
-        if yesterday_price > today_price_top20:
-
-            earn_loss_percent = -(
-                abs(yesterday_price - today_price_top20) / yesterday_price * 100
-            )
-        else:
             earn_loss_percent = (
-                abs(yesterday_price - today_price_top20) / yesterday_price * 100
-            )
+                (today_price_top20 - yesterday_price) / yesterday_price
+            ) * 100
 
         self.money.update({"money_to_buy_top20": today_price_top20})
-        self.earn_loss.update({"earn_loss_percent": earn_loss_percent, 'money_spent_yesterday':yesterday_price})
+        
+        self.earn_loss.update(
+            {
+                "earn_loss_percent": earn_loss_percent,
+                "money_spent_yesterday": yesterday_price,
+            }
+        )
 
     # function for the json output
     def json_dump(self):
@@ -157,6 +151,7 @@ class Repo:
 
         except:
             print("Error")
+
 
 report = Repo()
 report.json_dump()
